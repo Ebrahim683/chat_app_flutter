@@ -16,6 +16,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   var uid = GetStorageManager.getToken();
+
+  UserModel _userModel = UserModel();
+
   //log out
   logOut() {
     GetStorageManager.logOut();
@@ -25,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   //get user info
-  getUserInfo() async {
+  Future<void> getUserInfo() async {
     try {
       DocumentSnapshot snapshot = await FirebaseFirestore.instance
           .collection('usersData')
@@ -33,6 +36,9 @@ class _HomePageState extends State<HomePage> {
           .get();
       dynamic data = snapshot.data();
       UserModel userModel = UserModel.fromMap(data);
+      setState(() {
+        _userModel = userModel;
+      });
       print('home:${userModel.emailAddress}');
     } catch (e) {
       print('home: $e');
@@ -59,19 +65,19 @@ class _HomePageState extends State<HomePage> {
         leading: Padding(
           padding: EdgeInsets.symmetric(vertical: 5.h),
           child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  AppConstant.goTo(context, const ProfilePage());
-                });
-              },
-              child: CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: Image.network(
-                      'https://png.pngtree.com/png-vector/20190710/ourmid/pngtree-user-vector-avatar-png-image_1541962.jpg'),
-                ),
-              )),
+            onTap: () {
+              setState(() {
+                AppConstant.goTo(context, const ProfilePage());
+              });
+            },
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              backgroundImage: NetworkImage(_userModel.profilePic.toString()),
+              child: _userModel.profilePic.toString() == null
+                  ? const Icon(Icons.person)
+                  : const Center(),
+            ),
+          ),
         ),
         actions: [
           Padding(
