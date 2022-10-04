@@ -1,9 +1,12 @@
 import 'package:chat_app_flutter/constant/app_constant.dart';
+import 'package:chat_app_flutter/firebase/FirebaseHelper.dart';
 import 'package:chat_app_flutter/model/usermodel/user_model.dart';
 import 'package:chat_app_flutter/ui/pages/auth/sign_in_page.dart';
 import 'package:chat_app_flutter/ui/pages/profile/profile_page.dart';
+import 'package:chat_app_flutter/ui/pages/search/search_page.dart';
 import 'package:chat_app_flutter/utils/getstoragemanager/get_storage_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -17,7 +20,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   var uid = GetStorageManager.getToken();
 
-  UserModel _userModel = UserModel();
+  UserModel? userModel;
+  String profilePic = '';
 
   //log out
   logOut() {
@@ -28,21 +32,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   //get user info
-  Future<void> getUserInfo() async {
-    try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('usersData')
-          .doc(uid)
-          .get();
-      dynamic data = snapshot.data();
-      UserModel userModel = UserModel.fromMap(data);
-      setState(() {
-        _userModel = userModel;
-      });
-      print('home:${userModel.emailAddress}');
-    } catch (e) {
-      print('home: $e');
-    }
+  getUserInfo() async {
+    userModel = await FirebaseHelper.getUserModel(uid);
+    setState(() {
+      profilePic = userModel!.profilePic.toString();
+    });
   }
 
   @override
@@ -72,14 +66,25 @@ class _HomePageState extends State<HomePage> {
             },
             child: CircleAvatar(
               backgroundColor: Colors.white,
-              backgroundImage: NetworkImage(_userModel.profilePic.toString()),
-              child: _userModel.profilePic.toString() == null
+              backgroundImage: NetworkImage(profilePic),
+              child: profilePic == null
                   ? const Icon(Icons.person)
                   : const Center(),
             ),
           ),
         ),
         actions: [
+          Padding(
+            padding: EdgeInsets.only(right: 5.w),
+            child: IconButton(
+                onPressed: () {
+                  setState(() {
+                    AppConstant.goTo(
+                        context, SearchPage(userModel: userModel!));
+                  });
+                },
+                icon: const Icon(Icons.search)),
+          ),
           Padding(
             padding: EdgeInsets.only(right: 5.w),
             child: IconButton(

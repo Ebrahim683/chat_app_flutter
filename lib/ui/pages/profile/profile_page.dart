@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chat_app_flutter/constant/app_constant.dart';
+import 'package:chat_app_flutter/firebase/FirebaseHelper.dart';
 import 'package:chat_app_flutter/model/usermodel/user_model.dart';
 import 'package:chat_app_flutter/utils/getstoragemanager/get_storage_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -23,7 +24,8 @@ class _ProfilePageState extends State<ProfilePage> {
   File? imageFile;
   String? profileImage;
   final TextEditingController _fullNameController = TextEditingController();
-  UserModel _userModel = UserModel();
+  UserModel? userModel;
+  bool isLoading = false;
 
 //select image
   selectImage(ImageSource source) async {
@@ -89,24 +91,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   //get user info
   getUserInfo() async {
-    try {
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('usersData')
-          .doc(GetStorageManager.getToken())
-          .get();
-      dynamic data = snapshot.data();
-      UserModel userModel = UserModel.fromMap(data);
-      setState(() {
-        _userModel = userModel;
-        emailAddress = _userModel.emailAddress.toString();
-        fullName = _userModel.fullName.toString();
-        profileImage = _userModel.profilePic;
-      });
-      print('profile:$profileImage');
-      print('profile:${_userModel.profilePic}');
-    } catch (e) {
-      print('profile: $e');
-    }
+    userModel = await FirebaseHelper.getUserModel(
+        GetStorageManager.getToken().toString());
+    setState(() {
+      profileImage = userModel!.profilePic.toString();
+      fullName = userModel!.fullName.toString();
+      emailAddress = userModel!.emailAddress.toString();
+    });
   }
 
 //update info
@@ -114,23 +105,32 @@ class _ProfilePageState extends State<ProfilePage> {
     String name = _fullNameController.text.toString();
 
     if (imageFile != null) {
-      var updatedName = name == '' ? fullName : name;
-      UploadTask uploadTask = FirebaseStorage.instance
-          .ref('profilePictures')
-          .child(GetStorageManager.getToken().toString())
-          .putFile(imageFile!);
+      try {
+        var updatedName = name == '' ? fullName : name;
+        UploadTask uploadTask = FirebaseStorage.instance
+            .ref('profilePictures')
+            .child(GetStorageManager.getToken().toString())
+            .putFile(imageFile!);
 
-      TaskSnapshot snapshot = await uploadTask;
-      String getUrl = await snapshot.ref.getDownloadURL();
-      _userModel.fullName = updatedName;
-      _userModel.profilePic = getUrl;
-      await FirebaseFirestore.instance
-          .collection('usersData')
-          .doc(GetStorageManager.getToken().toString())
-          .set(_userModel.toMap())
-          .then((value) {
-        print('profile: data updated');
-      });
+        TaskSnapshot snapshot = await uploadTask;
+        String getUrl = await snapshot.ref.getDownloadURL();
+        userModel!.fullName = updatedName;
+        userModel!.profilePic = getUrl;
+        await FirebaseFirestore.instance
+            .collection('usersData')
+            .doc(GetStorageManager.getToken().toString())
+            .set(userModel!.toMap())
+            .then((value) {
+          print('profile: data updated');
+          setState(() {
+            isLoading = false;
+            AppConstant.snackBar(context: context, msg: 'Updated');
+          });
+        });
+      } catch (e) {
+        print('profile: $e');
+        AppConstant.snackBar(context: context, msg: e.toString());
+      }
     } else {
       AppConstant.snackBar(
           context: context, msg: 'Please fill the form and profile pic');
@@ -217,12 +217,18 @@ class _ProfilePageState extends State<ProfilePage> {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.w),
               child: SizedBox(
+                height: 35.h,
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    setState(() {
+                      isLoading = true;
+                    });
                     updateInfo();
                   },
-                  child: Text('Update'),
+                  child: isLoading == true
+                      ? CircularProgressIndicator()
+                      : Text('Update'),
                 ),
               ),
             ),
