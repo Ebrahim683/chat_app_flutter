@@ -1,7 +1,9 @@
 import 'package:chat_app_flutter/constant/app_constant.dart';
 import 'package:chat_app_flutter/firebase/FirebaseHelper.dart';
+import 'package:chat_app_flutter/model/chatroommodel/chat_room_model.dart';
 import 'package:chat_app_flutter/model/usermodel/user_model.dart';
 import 'package:chat_app_flutter/ui/pages/auth/sign_in_page.dart';
+import 'package:chat_app_flutter/ui/pages/chat/chat_room_page.dart';
 import 'package:chat_app_flutter/ui/pages/profile/profile_page.dart';
 import 'package:chat_app_flutter/ui/pages/search/search_page.dart';
 import 'package:chat_app_flutter/utils/getstoragemanager/get_storage_manager.dart';
@@ -50,7 +52,91 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(),
+        child: Container(
+          child: StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection('chatrooms')
+                .where('users', arrayContains: userModel?.userId)
+                // .orderBy('lastDate')
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.active) {
+                if (snapshot.hasData) {
+                  QuerySnapshot querySnapshot = snapshot.data as QuerySnapshot;
+                  if (querySnapshot.docs.length > 0) {
+                    return ListView.builder(
+                      itemCount: querySnapshot.docs.length,
+                      itemBuilder: (context, index) {
+                        ChatRoomModel chatRoomModel = ChatRoomModel.fromMap(
+                            querySnapshot.docs[index].data()
+                                as Map<String, dynamic>);
+
+                        Map<String, dynamic> participants =
+                            chatRoomModel.participants!;
+                        List<String> participantsKey =
+                            participants.keys.toList();
+                        participantsKey.remove(userModel?.userId);
+                        return FutureBuilder(
+                          future:
+                              FirebaseHelper.getUserModel(participantsKey[0]),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.done) {
+                              if (snapshot.data != null) {
+                                UserModel targetUserModel =
+                                    snapshot.data as UserModel;
+                                return ListTile(
+                                  onTap: () {
+                                    setState(() {
+                                      AppConstant.goTo(
+                                          context,
+                                          ChatRoomPage(
+                                              targetUserModel: targetUserModel,
+                                              chatRoomModel: chatRoomModel,
+                                              userModel: userModel!));
+                                    });
+                                  },
+                                  title:
+                                      Text(targetUserModel.fullName.toString()),
+                                  subtitle: Text(
+                                      chatRoomModel.lastMessage.toString()),
+                                  leading: CircleAvatar(
+                                      backgroundImage: NetworkImage(
+                                          targetUserModel.profilePic
+                                              .toString())),
+                                );
+                              } else {
+                                return const Center();
+                              }
+                            } else {
+                              return const Center();
+                            }
+                          },
+                        );
+                      },
+                    );
+                  } else {
+                    return Center(
+                      child: Text('${snapshot.error}'),
+                    );
+                  }
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text(snapshot.error.toString()),
+                  );
+                } else {
+                  return const Center(
+                    child: Text('No chats'),
+                  );
+                }
+              } else {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          ),
+        ),
       ),
       appBar: AppBar(
         backgroundColor: Colors.blueAccent.withOpacity(0.4),
@@ -64,13 +150,36 @@ class _HomePageState extends State<HomePage> {
                 AppConstant.goTo(context, const ProfilePage());
               });
             },
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              backgroundImage: NetworkImage(profilePic),
-              child: profilePic == null
-                  ? const Icon(Icons.person)
-                  : const Center(),
-            ),
+            child: StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection('usersData')
+                    .doc(uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.active) {
+                    if (snapshot.hasData) {
+                      DocumentSnapshot? querySnapshot =
+                          snapshot.data as DocumentSnapshot;
+                      dynamic data = querySnapshot.data();
+                      UserModel profilePicUserModel = UserModel.fromMap(data);
+                      return CircleAvatar(
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(
+                            profilePicUserModel.profilePic.toString()),
+                      );
+                    } else {
+                      return const CircleAvatar(
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person),
+                      );
+                    }
+                  } else {
+                    return const CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person),
+                    );
+                  }
+                }),
           ),
         ),
         actions: [

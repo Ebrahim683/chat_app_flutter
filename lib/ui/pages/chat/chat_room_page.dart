@@ -120,10 +120,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                               BorderRadius.circular(5.r),
                                           color: (currentMessage.sender ==
                                                   widget.userModel.userId)
+                                              // ignore: prefer_const_constructors
                                               ? Color.fromARGB(
                                                   255, 120, 54, 244)
+                                              // ignore: prefer_const_constructors
                                               : Color.fromARGB(
-                                                  255, 102, 241, 107)),
+                                                  255, 92, 78, 59)),
                                       child: Text(
                                         currentMessage.text.toString(),
                                         style: const TextStyle(

@@ -38,11 +38,19 @@ class _SearchPageState extends State<SearchPage> {
       log('chat room fetched');
       chatRoomModel = existingChatRoomModel;
     } else {
-      ChatRoomModel newChatRoomModel =
-          ChatRoomModel(chatRoomId: uuid.v1(), lastMessage: '', participants: {
-        widget.userModel.userId.toString(): true,
-        targetUserModel.userId.toString(): true,
-      });
+      ChatRoomModel newChatRoomModel = ChatRoomModel(
+          chatRoomId: uuid.v1(),
+          lastMessage: '',
+          participants: {
+            widget.userModel.userId.toString(): true,
+            targetUserModel.userId.toString(): true,
+          },
+          lastDate: DateTime.now().toString(),
+          users: [
+            widget.userModel.userId.toString(),
+            targetUserModel.userId.toString()
+          ]);
+
       await FirebaseFirestore.instance
           .collection('chatrooms')
           .doc(newChatRoomModel.chatRoomId)
