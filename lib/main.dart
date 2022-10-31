@@ -1,12 +1,13 @@
+import 'package:chat_app_flutter/bindings/getx_binding.dart';
 import 'package:chat_app_flutter/ui/pages/splash/splash_screen_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:uuid/uuid.dart';
 
-
-var uuid = Uuid();
+var uuid = const Uuid();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +25,10 @@ class MyApp extends StatelessWidget {
     return ScreenUtilInit(
       designSize: const Size(360, 690),
       builder: (BuildContext context, Widget? child) {
-        return const MaterialApp(
+        return GetMaterialApp(
+          initialBinding: GetxBinding(),
           debugShowCheckedModeBanner: false,
-          home: SplashScreen(),
+          home: const SplashScreen(),
         );
       },
     );
