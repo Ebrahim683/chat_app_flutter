@@ -8,7 +8,6 @@ import 'package:chat_app_flutter/ui/pages/profile/profile_page.dart';
 import 'package:chat_app_flutter/ui/pages/search/search_page.dart';
 import 'package:chat_app_flutter/utils/getstoragemanager/get_storage_manager.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -86,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                                 UserModel targetUserModel =
                                     snapshot.data as UserModel;
                                 return ListTile(
-                                  onTap: () {
+                                  onTap: ()  {
                                     setState(() {
                                       AppConstant.goTo(
                                           context,

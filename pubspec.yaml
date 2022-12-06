@@ -44,6 +44,10 @@ dependencies:
   image_cropper: ^3.0.0
   uuid: ^3.0.6
   get: ^4.6.5
+  firebase_database: ^9.1.7
+  # zego calling
+  zego_uikit_prebuilt_call: ^1.2.12
+  zego_uikit_signaling_plugin: ^1.0.16
   
 dev_dependencies:
   flutter_test:
